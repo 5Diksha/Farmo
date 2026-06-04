@@ -173,7 +173,12 @@ def create_monthly_excel_report(
 
 
 
+    # DEBUG
+    print("Workbook sheets:")
+    print(wb.sheetnames)
 
     wb.save(file_path)
+
+    print(f"Saved: {file_path}")
 
     return file_path

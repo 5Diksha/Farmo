@@ -182,3 +182,155 @@ def create_monthly_excel_report(
     print(f"Saved: {file_path}")
 
     return file_path
+
+def create_customer_monthly_report(
+    customer_name,
+    month_name,
+    year,
+    work_records,
+    payments,
+    summary
+):
+
+    file_name = (
+        f"{customer_name}_{month_name}_{year}.xlsx"
+    )
+
+    file_path = EXPORT_DIR / file_name
+
+    wb = Workbook()
+
+    # =========================
+    # SHEET 1 - WORK SUMMARY
+    # =========================
+
+    ws1 = wb.active
+    ws1.title = "Work Summary"
+
+    ws1.append([
+        "Work Type",
+        "Quantity",
+        "Amount"
+    ])
+
+    for cell in ws1[1]:
+        cell.font = Font(bold=True)
+
+    ws1.append([
+        "Rotavator",
+        summary["rot_hours"],
+        summary["rot_amount"]
+    ])
+
+    ws1.append([
+        "Nangarat",
+        summary["nangarat_hours"],
+        summary["nangarat_amount"]
+    ])
+
+    ws1.append([
+        "Fanadi",
+        summary["fanadi_hours"],
+        summary["fanadi_amount"]
+    ])
+
+    ws1.append([
+        "Trolley Trip",
+        summary["trolley_trips"],
+        summary["trolley_amount"]
+    ])
+
+    ws1.append([
+        "Water Tanker Trip",
+        summary["tanker_trips"],
+        summary["tanker_amount"]
+    ])
+
+    # =========================
+    # SHEET 2 - WORK HISTORY
+    # =========================
+
+    ws2 = wb.create_sheet("Work History")
+
+    ws2.append([
+        "Date",
+        "Work Type",
+        "Hours",
+        "Minutes",
+        "Trips",
+        "Amount",
+        "Advance Received"
+    ])
+
+    for cell in ws2[1]:
+        cell.font = Font(bold=True)
+
+    for row in work_records:
+
+        ws2.append([
+            row["work_date"],
+            row["work_type"],
+            row["hours"],
+            row["minutes"],
+            row["trips"],
+            row["amount"],
+            row["credit_given"]
+        ])
+
+    # =========================
+    # SHEET 3 - PAYMENT HISTORY
+    # =========================
+
+    ws3 = wb.create_sheet("Payment History")
+
+    ws3.append([
+        "Date",
+        "Amount",
+        "Notes"
+    ])
+
+    for cell in ws3[1]:
+        cell.font = Font(bold=True)
+
+    for row in payments:
+
+        ws3.append([
+            row["payment_date"],
+            row["amount"],
+            row["notes"]
+        ])
+
+    # =========================
+    # SHEET 4 - FINANCIAL SUMMARY
+    # =========================
+
+    ws4 = wb.create_sheet("Financial Summary")
+
+    ws4.append(["Item", "Amount"])
+
+    for cell in ws4[1]:
+        cell.font = Font(bold=True)
+
+    ws4.append([
+        "Total Work Amount",
+        summary["total_work_amount"]
+    ])
+
+    ws4.append([
+        "Advance Received",
+        summary["total_credit"]
+    ])
+
+    ws4.append([
+        "Payments Received",
+        summary["total_payments"]
+    ])
+
+    ws4.append([
+        "Pending Balance",
+        summary["balance"]
+    ])
+
+    wb.save(file_path)
+
+    return file_path

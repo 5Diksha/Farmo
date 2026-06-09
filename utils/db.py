@@ -631,3 +631,151 @@ def get_monthly_summary(month, year):
     }
 
 
+# =========================
+# CUSTOMER MONTHLY REPORT
+# =========================
+
+def get_customer_monthly_work_records(
+    customer_id,
+    month,
+    year
+):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT *
+    FROM work_records
+    WHERE customer_id = ?
+    AND strftime('%m', work_date) = ?
+    AND strftime('%Y', work_date) = ?
+    ORDER BY work_date
+    """, (
+        customer_id,
+        f"{month:02d}",
+        str(year)
+    ))
+
+    records = cursor.fetchall()
+
+    conn.close()
+
+    return records
+
+
+def get_customer_monthly_payments(
+    customer_id,
+    month,
+    year
+):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT *
+    FROM payments
+    WHERE customer_id = ?
+    AND strftime('%m', payment_date) = ?
+    AND strftime('%Y', payment_date) = ?
+    ORDER BY payment_date
+    """, (
+        customer_id,
+        f"{month:02d}",
+        str(year)
+    ))
+
+    records = cursor.fetchall()
+
+    conn.close()
+
+    return records
+
+def get_customer_monthly_summary(
+    customer_id,
+    month,
+    year
+):
+
+    work_records = get_customer_monthly_work_records(
+        customer_id,
+        month,
+        year
+    )
+
+    payments = get_customer_monthly_payments(
+        customer_id,
+        month,
+        year
+    )
+
+    summary = {
+        "rot_hours": 0,
+        "rot_amount": 0,
+
+        "nangarat_hours": 0,
+        "nangarat_amount": 0,
+
+        "fanadi_hours": 0,
+        "fanadi_amount": 0,
+
+        "trolley_trips": 0,
+        "trolley_amount": 0,
+
+        "tanker_trips": 0,
+        "tanker_amount": 0,
+
+        "total_work_amount": 0,
+        "total_credit": 0,
+        "total_payments": 0,
+        "balance": 0
+    }
+
+    for row in work_records:
+
+        amount = row["amount"]
+        credit = row["credit_given"]
+
+        summary["total_work_amount"] += amount
+        summary["total_credit"] += credit
+
+        if row["work_type"] == "Rotavator":
+            summary["rot_hours"] += (
+                row["hours"] +
+                row["minutes"] / 60
+            )
+            summary["rot_amount"] += amount
+
+        elif row["work_type"] == "Nangarat":
+            summary["nangarat_hours"] += (
+                row["hours"] +
+                row["minutes"] / 60
+            )
+            summary["nangarat_amount"] += amount
+
+        elif row["work_type"] == "Fanadi":
+            summary["fanadi_hours"] += (
+                row["hours"] +
+                row["minutes"] / 60
+            )
+            summary["fanadi_amount"] += amount
+
+        elif row["work_type"] == "Trolley Trip":
+            summary["trolley_trips"] += row["trips"]
+            summary["trolley_amount"] += amount
+
+        elif row["work_type"] == "Water Tanker Trip":
+            summary["tanker_trips"] += row["trips"]
+            summary["tanker_amount"] += amount
+
+    for payment in payments:
+        summary["total_payments"] += payment["amount"]
+
+    summary["balance"] = (
+        summary["total_work_amount"]
+        - summary["total_credit"]
+        - summary["total_payments"]
+    )
+
+    return summary
